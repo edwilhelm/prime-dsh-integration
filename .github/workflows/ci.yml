@@ -65,9 +65,12 @@ jobs:
           $count = (Select-String -Path "$env:RUNNER_TEMP\dsh-home\settings.yaml" -SimpleMatch '# >>> prime-dsh-integration >>>').Count
           if ($count -ne 1) { throw "expected exactly one prime settings block, found $count" }
 
-      - name: Uninstall removes everything
+      - name: Uninstall removes everything except the user-owned settings file
         shell: pwsh
         run: |
-          ./uninstall.ps1 -DshHome "$env:RUNNER_TEMP\dsh-home" -PurgeData
-          $left = Get-ChildItem "$env:RUNNER_TEMP\dsh-home" -Recurse -File
-          if ($left) { throw "uninstall left $($left.Count) file(s) behind" }
+          ./uninstall.ps1 -DshHome "$env:RUNNER_TEMP\dsh-home" -PurgeData -ConfirmPurge
+          $settings = "$env:RUNNER_TEMP\dsh-home\settings.yaml"
+          if (-not (Test-Path $settings)) { throw 'uninstall must KEEP settings.yaml (prime block stripped)' }
+          if ((Select-String -Path $settings -SimpleMatch 'prime-dsh-integration')) { throw 'prime settings block survived uninstall' }
+          $left = Get-ChildItem "$env:RUNNER_TEMP\dsh-home" -Recurse -File | Where-Object { $_.FullName -ne $settings }
+          if ($left) { throw "uninstall left $($left.Count) unexpected file(s): $($left.FullName -join ', ')" }
