@@ -1,0 +1,9 @@
+name: Prime RLM
+description: >-
+  Prime Agent's RLM loop on dsh's own seams: tools presented through Code Mode
+  (programmatic calling) plus a persistent Python kernel (python_exec) whose
+  variables survive across calls. Envelope discipline is pull-based
+  (history_search / turns_last / artifacts) with raw user instructions always
+  verbatim; budgets, kill switch, refinement proposals, and family caps ride
+  along from the prime profile. Degrades gracefully: repeated failures trip
+  the fallback router without losing session state.

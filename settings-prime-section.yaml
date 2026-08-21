@@ -1,0 +1,35 @@
+# >>> prime-dsh-integration >>>
+# Prime Agent integration (out-of-tree plugins, prime-* profiles). Every
+# namespace below is registered by a prime plugin and hot-reloads. Delete
+# this block to fall back to plugin row defaults.
+prime:
+  channel: prime-alpha
+
+  rlm:
+    enabled: true
+    envelopeWarnChars: 120000
+    envelopeBudgetChars: 400000
+    pinnedFacts: []
+
+  kernel:
+    python: python
+    execTimeoutMs: 120000
+    maxOutputChars: 200000
+
+  budgets:
+    session: { maxTokens: 2000000, maxTurns: 200, maxWallClockMs: 21600000 }
+    children: { maxTotalTokens: 1000000, maxPerChildTokens: 250000, maxConcurrency: 4 }
+    kill: null
+
+  policy:
+    classes:
+      shell.exec: dangerous
+      file.write: dangerous
+      file.read: safe
+      web.fetch: dangerous
+      net.connect: forbidden
+      pip.install: dangerous
+
+  refine:
+    approveGlobal: false
+# <<< prime-dsh-integration <<<

@@ -1,0 +1,59 @@
+# The prime-web profile patch: the Prime Agent integration (plan v3 §4.10)
+# layered over dsh-base → dsh-web-app. The default web profile is untouched;
+# everything Prime-originated lives in THIS file and the out-of-tree plugin
+# repo it points at (../../plugins/prime/), so adoption = selecting this
+# profile and removal = deleting these rows.
+#
+# Rows are grouped by plan section. Relative plugin paths resolve against this
+# profile directory. Activation is service-availability driven, so row order
+# is for readers; `inject` lists declare what each plugin waits for.
+
+- insert:
+    # ── §4.6 shared policy service ──────────────────────────────────────────
+    - id: prime-policy
+      name: '../../plugins/prime/dsh-policy/index.cjs'
+      config:
+        classes:
+          shell.exec: dangerous
+          file.write: dangerous
+          file.read: safe
+          web.fetch: dangerous
+          net.connect: forbidden
+          pip.install: dangerous
+        children:
+          maxTotalTokens: 1000000
+          maxPerChildTokens: 250000
+          maxConcurrency: 4
+
+    # ── §4.1 kernel + artifact store ────────────────────────────────────────
+    - id: prime-kernel-python
+      name: '../../plugins/prime/dsh-kernel/kernel-python.cjs'
+
+    - id: prime-artifacts
+      name: '../../plugins/prime/dsh-kernel/artifacts.cjs'
+      config:
+        maxBytes: 67108864
+
+    # Model-facing consumer seam (P5): python_exec + retrieval helpers.
+    - id: prime-kernel-tools
+      name: '../../plugins/prime/dsh-kernel/tools.cjs'
+
+    # ── §4.2 RLM driver ─────────────────────────────────────────────────────
+    - id: prime-loop-rlm
+      name: '../../plugins/prime/dsh-loop-rlm/index.cjs'
+
+    # ── §4.4 autonomy ───────────────────────────────────────────────────────
+    - id: prime-autonomy
+      name: '../../plugins/prime/dsh-autonomy/index.cjs'
+
+    # ── §4.3 orchestration caps + dead letters ──────────────────────────────
+    - id: prime-orchestration
+      name: '../../plugins/prime/dsh-orchestration/index.cjs'
+
+    # ── §4.5 continual refinement ───────────────────────────────────────────
+    - id: prime-refinement
+      name: '../../plugins/prime/dsh-trajectory-refinement/index.cjs'
+
+    # ── §4.8 ops observability ──────────────────────────────────────────────
+    - id: prime-status-tool
+      name: '../../plugins/prime/dsh-prime-ops/index.cjs'

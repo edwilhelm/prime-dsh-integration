@@ -1,0 +1,67 @@
+# Model capability matrix — Phase 0 deliverable (plan §3)
+#
+# Consumed by dsh-loop-rlm's fallback router and the prime-rlm preset gate.
+# `rlm_ready: false` forces the declared fallback loop regardless of preset.
+# Every entry below is an UNMEASURED PLACEHOLDER (marked measured: false):
+# populating real numbers is the Phase-0 exit criterion, never assumed.
+#
+# Schema per model route (provider/model as used in settings.yaml routes):
+#   context_window      tokens
+#   prompt_cache        { stable_prefix: bool, discount: 0..1, invalidation: string }
+#   tool_calling        0..1 reliability score (Phase-0 rig measures this)
+#   code_generation     0..1 reliability score
+#   long_horizon        0..1 instruction-following score on >50-turn tasks
+#   cost                { input_per_mtok, output_per_mtok, cache_read_per_mtok }
+#   rate_limit          { rpm, tpd }
+#   rlm_ready           gate — RLM preset refuses to project onto false
+#   fallback_mode       'code' | 'standard' — where the router degrades to
+
+defaults:
+  rlm_ready: false
+  fallback_mode: standard
+  measured: false
+
+models:
+  openrouter/stealth/ox-alpha:
+    context_window: 200000
+    prompt_cache: { stable_prefix: true, discount: 0.5, invalidation: prefix-change }
+    tool_calling: 0.7
+    code_generation: 0.7
+    long_horizon: 0.6
+    cost: { input_per_mtok: null, output_per_mtok: null, cache_read_per_mtok: null }
+    rlm_ready: true          # provisional: RLM allowed, router watches error rates
+    fallback_mode: code
+    measured: false
+
+  grok/grok-4.6:
+    context_window: 256000
+    prompt_cache: { stable_prefix: true, discount: 0.75, invalidation: prefix-change }
+    tool_calling: 0.8
+    code_generation: 0.8
+    long_horizon: 0.7
+    cost: { input_per_mtok: null, output_per_mtok: null, cache_read_per_mtok: null }
+    rlm_ready: true          # provisional
+    fallback_mode: code
+    measured: false
+
+  clinepass/cline-pass/deepseek-v4-flash:
+    context_window: 128000
+    prompt_cache: { stable_prefix: true, discount: 0.9, invalidation: prefix-change }
+    tool_calling: 0.75
+    code_generation: 0.8
+    long_horizon: 0.55
+    cost: { input_per_mtok: null, output_per_mtok: null, cache_read_per_mtok: null }
+    rlm_ready: false         # subagent route: Standard mode until measured
+    fallback_mode: standard
+    measured: false
+
+  deepseek-official/deepseek-v4-flash:
+    context_window: 128000
+    prompt_cache: { stable_prefix: true, discount: 0.9, invalidation: prefix-change }
+    tool_calling: 0.75
+    code_generation: 0.8
+    long_horizon: 0.6
+    cost: { input_per_mtok: null, output_per_mtok: null, cache_read_per_mtok: null }
+    rlm_ready: false
+    fallback_mode: standard
+    measured: false

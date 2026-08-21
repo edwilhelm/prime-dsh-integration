@@ -1,0 +1,54 @@
+# The prime-headless profile patch: the Prime Agent integration over
+# dsh-base → dsh-headless (one-shot task mode, no UI). Identical rows to the
+# prime-web patch; kept as a separate file so the two profiles can diverge by
+# channel without touching each other. The headless bundle already mounts the
+# TypeScript code runtime, so run_code works here alongside python_exec.
+
+- insert:
+    # ── §4.6 shared policy service ──────────────────────────────────────────
+    - id: prime-policy
+      name: '../../plugins/prime/dsh-policy/index.cjs'
+      config:
+        classes:
+          shell.exec: dangerous
+          file.write: dangerous
+          file.read: safe
+          web.fetch: dangerous
+          net.connect: forbidden
+          pip.install: dangerous
+        children:
+          maxTotalTokens: 1000000
+          maxPerChildTokens: 250000
+          maxConcurrency: 4
+
+    # ── §4.1 kernel + artifact store ────────────────────────────────────────
+    - id: prime-kernel-python
+      name: '../../plugins/prime/dsh-kernel/kernel-python.cjs'
+
+    - id: prime-artifacts
+      name: '../../plugins/prime/dsh-kernel/artifacts.cjs'
+      config:
+        maxBytes: 67108864
+
+    - id: prime-kernel-tools
+      name: '../../plugins/prime/dsh-kernel/tools.cjs'
+
+    # ── §4.2 RLM driver ─────────────────────────────────────────────────────
+    - id: prime-loop-rlm
+      name: '../../plugins/prime/dsh-loop-rlm/index.cjs'
+
+    # ── §4.4 autonomy ───────────────────────────────────────────────────────
+    - id: prime-autonomy
+      name: '../../plugins/prime/dsh-autonomy/index.cjs'
+
+    # ── §4.3 orchestration caps + dead letters ──────────────────────────────
+    - id: prime-orchestration
+      name: '../../plugins/prime/dsh-orchestration/index.cjs'
+
+    # ── §4.5 continual refinement ───────────────────────────────────────────
+    - id: prime-refinement
+      name: '../../plugins/prime/dsh-trajectory-refinement/index.cjs'
+
+    # ── §4.8 ops observability ──────────────────────────────────────────────
+    - id: prime-status-tool
+      name: '../../plugins/prime/dsh-prime-ops/index.cjs'
