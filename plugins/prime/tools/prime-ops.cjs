@@ -248,6 +248,10 @@ for raw in sys.stdin:
 }
 
 async function cmdSelftest() {
+  // Load modules relative to THIS FILE's installation (…/plugins/prime),
+  // not the configured home: selftest verifies the code it ships with,
+  // wherever it is installed (repo checkout, throwaway home, CI).
+  const primeRoot = path.resolve(__dirname, '..');
   const modules = [
     'dsh-policy/index.cjs',
     'dsh-kernel/kernel-python.cjs',
@@ -261,7 +265,7 @@ async function cmdSelftest() {
   ];
   for (const relative of modules) {
     // eslint-disable-next-line import/no-dynamic-require
-    const mod = require(path.join(PRIME, relative));
+    const mod = require(path.join(primeRoot, relative));
     if (typeof mod.name !== 'string' || typeof mod.apply !== 'function') {
       fail(`module ${relative} does not export {name, apply}`);
     }
