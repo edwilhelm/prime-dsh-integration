@@ -1,5 +1,5 @@
 ﻿# ============================================================================
-# uninstall.ps1 - remove the prime dsh integration from a dsh harness home
+# uninstall.ps1 — remove the prime dsh integration from a dsh harness home
 # ============================================================================
 # Deletes the installed plugins, profiles, and agent preset, and removes the
 # marker-delimited `prime:` settings block. Session sidecar journals and
@@ -8,11 +8,16 @@
 #
 #   powershell -ExecutionPolicy Bypass -File uninstall.ps1
 #   powershell -ExecutionPolicy Bypass -File uninstall.ps1 -PurgeData
+#
+# Purging is destructive and irreversible: interactive sessions must type
+# PURGE to confirm; unattended sessions (redirected stdin) must pass
+# -ConfirmPurge explicitly.
 # ============================================================================
 [CmdletBinding()]
 param(
   [string]$DshHome = $(if ($env:DSH_HOME -and $env:DSH_HOME.Trim() -ne '') { $env:DSH_HOME } else { Join-Path $HOME '.dsh' }),
-  [switch]$PurgeData
+  [switch]$PurgeData,
+  [switch]$ConfirmPurge
 )
 
 $ErrorActionPreference = 'Stop'
@@ -48,6 +53,16 @@ if (Test-Path $settingsPath) {
 if ($PurgeData) {
   $data = Join-Path $DshHome 'storages\prime'
   if (Test-Path $data) {
+    if (-not $ConfirmPurge) {
+      if ([Console]::IsInputRedirected) {
+        throw 'purging storages/prime requires -ConfirmPurge when stdin is redirected (unattended run)'
+      }
+      $answer = Read-Host "This permanently deletes journals/artifacts under $data. Type PURGE to confirm"
+      if ($answer -cne 'PURGE') {
+        Write-Host 'aborted - data kept'
+        exit 1
+      }
+    }
     Remove-Item $data -Recurse -Force
     Write-Host "purged $data"
   }

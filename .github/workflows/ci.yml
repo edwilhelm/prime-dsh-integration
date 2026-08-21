@@ -1,0 +1,73 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Syntax-check every module
+        run: |
+          find . -type f \( -name '*.cjs' -o -name '*.mjs' \) -not -path '*/node_modules/*' -print0 \
+            | xargs -0 -n1 node --check
+
+      - name: Behavioral checks (stubbed-context, shipped plugin code)
+        working-directory: plugins/prime/tools
+        run: |
+          node prime-ops.cjs selftest
+          node kernel-security-check.cjs
+          node refinement-governance-check.cjs
+          node autonomy-check.cjs
+          node orchestration-check.cjs
+          node rlm-loop-check.cjs
+
+  installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install into a throwaway harness home
+        shell: pwsh
+        run: ./install.ps1 -DshHome "$env:RUNNER_TEMP\dsh-home"
+
+      - name: Re-install is idempotent (single settings block)
+        shell: pwsh
+        run: |
+          ./install.ps1 -DshHome "$env:RUNNER_TEMP\dsh-home"
+          $count = (Select-String -Path "$env:RUNNER_TEMP\dsh-home\settings.yaml" -SimpleMatch '# >>> prime-dsh-integration >>>').Count
+          if ($count -ne 1) { throw "expected exactly one prime settings block, found $count" }
+
+      - name: Uninstall removes everything
+        shell: pwsh
+        run: |
+          ./uninstall.ps1 -DshHome "$env:RUNNER_TEMP\dsh-home" -PurgeData
+          $left = Get-ChildItem "$env:RUNNER_TEMP\dsh-home" -Recurse -File
+          if ($left) { throw "uninstall left $($left.Count) file(s) behind" }

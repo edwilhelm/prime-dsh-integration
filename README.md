@@ -1,5 +1,7 @@
 # prime-dsh-integration
 
+[![ci](https://github.com/edwilhelm/prime-dsh-integration/actions/workflows/ci.yml/badge.svg)](https://github.com/edwilhelm/prime-dsh-integration/actions/workflows/ci.yml)
+
 Prime Agent's five proven strengths — RLM architecture, Continual Harness
 self-improvement, long-horizon autonomy, family-scoped orchestration, and
 token efficiency — ported into **DeepSeek Harness (dsh)** as out-of-tree
@@ -13,42 +15,31 @@ uninstalling is one script.
 ## Install
 
 Requirements: [dsh](https://github.com/deepseek-ai/deepseek-harness) v0.1.x,
-Node 22+, Python 3.10+ on PATH (for the persistent kernel), PowerShell 5.1+
-(Windows) — see "POSIX" below.
+Node 22+, Python 3.10+ on PATH (for the persistent kernel).
+
+Windows:
 
 ```powershell
-git clone https://github.com/<you>/prime-dsh-integration.git
+git clone https://github.com/edwilhelm/prime-dsh-integration.git
 cd prime-dsh-integration
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
-The installer copies `plugins\prime`, the two `prime-*` profiles, and the
-`prime-rlm` preset into your harness home (`$DSH_HOME` or `~\.dsh`), appends
+macOS / Linux:
+
+```sh
+git clone https://github.com/edwilhelm/prime-dsh-integration.git
+cd prime-dsh-integration
+./install.sh
+```
+
+The installer copies `plugins/prime`, the two `prime-*` profiles, and the
+`prime-rlm` preset into your harness home (`$DSH_HOME` or `~/.dsh`), appends
 the documented `prime:` settings section once (marker-delimited), and runs the
 selftest. Re-running refreshes files in place.
 
-Uninstall:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File uninstall.ps1            # keep journals/artifacts
-powershell -ExecutionPolicy Bypass -File uninstall.ps1 -PurgeData # also delete storages\prime
-```
-
-### POSIX
-
-The integration itself is plain Node CommonJS and works anywhere dsh runs;
-only the installer is PowerShell today. On macOS/Linux, copy the trees by
-hand — same layout the script creates:
-
-```
-cp -R plugins/prime        ~/.dsh/plugins/prime
-cp -R profiles/prime-web   ~/.dsh/profiles/prime-web
-cp -R profiles/prime-headless ~/.dsh/profiles/prime-headless
-cp -R agent-presets/prime-rlm ~/.dsh/.agent-presets/prime-rlm
-cat settings-prime-section.yaml >> ~/.dsh/settings.yaml   # first install only
-```
-
-(A POSIX installer PR is welcome.)
+Uninstall: `uninstall.ps1` / `./uninstall.sh` (add `-PurgeData` / `PURGE=1`
+to also delete journals and artifacts under `storages/prime`).
 
 ## Use
 
@@ -107,7 +98,16 @@ node tools\rlm-loop-check.cjs                      # snapshots, verbatim user te
 ```
 
 All green as of 2026-08-21, plus live headless boots with persistent-kernel
-tool calls on dsh v0.1.0-rc.7 / Node 22.15 / Python 3.13 / Windows.
+tool calls on dsh v0.1.0-rc.7 / Node 22.15 / Python 3.13 / Windows. CI runs
+the same suite on Windows and Linux plus an installer round-trip on every
+push.
+
+Because the integration lives in two places (repo + installed harness home),
+check for drift before pushing or after editing either side:
+
+```sh
+node scripts/drift-check.cjs
+```
 
 ## Known limitations
 
