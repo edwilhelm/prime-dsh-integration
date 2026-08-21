@@ -42,7 +42,12 @@ if (Test-Path $settingsPath) {
   $begin = ($lines | Select-String -SimpleMatch '# >>> prime-dsh-integration >>>').LineNumber
   $end = ($lines | Select-String -SimpleMatch '# <<< prime-dsh-integration <<<').LineNumber
   if ($begin -and $end -and $end -gt $begin) {
-    $kept = $lines[0..($begin - 2)] + $lines[$end..($lines.Count - 1)]
+    # Loop-based slice (LineNumber is 1-based): a descending-range trap makes
+    # $lines[$end..($lines.Count-1)] re-include the end marker when the block
+    # ends the file.
+    $kept = New-Object System.Collections.Generic.List[string]
+    for ($i = 0; $i -lt $begin - 1; $i++) { $kept.Add($lines[$i]) }
+    for ($i = $end; $i -lt $lines.Count; $i++) { $kept.Add($lines[$i]) }
     Set-Content -Path $settingsPath -Value ($kept -join "`n") -Encoding UTF8
     Write-Host "removed prime section from $settingsPath"
   } else {
